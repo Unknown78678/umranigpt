@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UmraniGPT Simple</title>
+</head>
+<body style="background-color: #1c1c1e; color: white; font-family: sans-serif; padding: 20px; max-width: 600px; mx-auto: margin: auto;">
+
+    <h2 style="color: #5856d6; text-align: center;">🤖 UmraniGPT Terminal</h2>
+    
+    <!-- Status Display -->
+    <p id="status" style="text-align: center; color: #ff9500; font-size: 14px;">Connecting to Ollama...</p>
+
+    <!-- Chat Box -->
+    <div id="chat-box" style="background: #2c2c2e; padding: 15px; border-radius: 8px; min-height: 150px; max-height: 300px; overflow-y: auto; margin-bottom: 20px; white-space: pre-wrap;">
+        <span style="color: #8e8e93;">System: Waiting for prompt...</span>
+    </div>
+
+    <!-- Input Section -->
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="user-input" placeholder="Type your message here..." style="flex: 1; padding: 10px; border-radius: 5px; border: none; background: #3a3a3c; color: white;">
+        <button id="send-btn" onclick="askAI()" style="padding: 10px 20px; border-radius: 5px; border: none; background: #5856d6; color: white; font-weight: bold; cursor: pointer;" disabled>Send</button>
+    </div>
+
+    <script>
+        // Aap ka live tunnel link
+        const API_URL = "https://pack-comparative-caused-atm.trycloudflare.com";
+        let modelName = "";
+
+        // Check connection and get model
+        async function checkConnection() {
+            try {
+                const res = await fetch(`${API_URL}/api/tags`);
+                const data = await res.json();
+                if(data.models && data.models.length > 0) {
+                    modelName = data.models[0].name;
+                    document.getElementById("status").innerText = "● Connected to: " + modelName;
+                    document.getElementById("status").style.color = "#34c759";
+                    document.getElementById("send-btn").disabled = false;
+                }
+            } catch (err) {
+                document.getElementById("status").innerText = "❌ Offline (Check PowerShell CMD)";
+                document.getElementById("status").style.color = "#ff3b30";
+            }
+        }
+
+        // Send message to local Ollama AI
+        async function askAI() {
+            const inputField = document.getElementById("user-input");
+            const chatBox = document.getElementById("chat-box");
+            const prompt = inputField.value.trim();
+            
+            if(!prompt) return;
+
+            // Show user message
+            chatBox.innerHTML += `\n\n<b>You:</b> ${prompt}`;
+            inputField.value = "";
+            chatBox.innerHTML += `\n<b>UmraniGPT:</b> Thinking...`;
+
+            try {
+                const res = await fetch(`${API_URL}/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: modelName, prompt: prompt, stream: false })
+                });
+                const data = await res.json();
+                
+                // Replace 'Thinking...' with actual answer
+                const lastIndex = chatBox.innerHTML.lastIndexOf("\n<b>UmraniGPT:</b> Thinking...");
+                chatBox.innerHTML = chatBox.innerHTML.substring(0, lastIndex);
+                chatBox.innerHTML += `\n<b>UmraniGPT:</b> ${data.response}`;
+            } catch (err) {
+                chatBox.innerHTML += `\n<span style="color:red;">Error connecting to your PC.</span>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Run connection test on load
+        checkConnection();
+    </script>
+</body>
+</html>
